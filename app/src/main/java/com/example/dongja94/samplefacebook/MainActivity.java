@@ -19,6 +19,7 @@ import com.facebook.FacebookCallback;
 import com.facebook.FacebookException;
 import com.facebook.GraphRequest;
 import com.facebook.GraphResponse;
+import com.facebook.HttpMethod;
 import com.facebook.login.DefaultAudience;
 import com.facebook.login.LoginBehavior;
 import com.facebook.login.LoginManager;
@@ -26,6 +27,8 @@ import com.facebook.login.LoginResult;
 import com.facebook.login.widget.LoginButton;
 
 import org.json.JSONObject;
+
+import java.util.Arrays;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -118,6 +121,106 @@ public class MainActivity extends AppCompatActivity {
                 displayCustom();
             }
         };
+
+        btn = (Button)findViewById(R.id.btn_read_post);
+        btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                readPost();
+            }
+        });
+
+        btn = (Button)findViewById(R.id.btn_write_post);
+        btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                writePost();
+            }
+        });
+    }
+
+    private void writePost() {
+        AccessToken token = AccessToken.getCurrentAccessToken();
+        if (token != null) {
+            if (token.getPermissions().contains("publish_actions")) {
+                Bundle parameters = new Bundle();
+                parameters.putString("message","facebook api test");
+                parameters.putString("link", "http://developers.facebook.com/docs/android");
+                parameters.putString("picture", "https://raw.github.com/fbsamples/.../iossdk_logo.png");
+                parameters.putString("name", "Hello Facebook");
+                parameters.putString("description", "The 'Hello Facebook' sample  showcases simple …");
+                GraphRequest request = new GraphRequest(token, "/me/feed", parameters, HttpMethod.POST, new GraphRequest.Callback() {
+                    @Override
+                    public void onCompleted(GraphResponse response) {
+                        if (response.getError() == null) {
+                            Toast.makeText(MainActivity.this, "post id : " + response.getRawResponse(), Toast.LENGTH_SHORT).show();
+                        } else {
+                            Toast.makeText(MainActivity.this, "error : " + response.getError().toString(), Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
+                request.executeAsync();
+                return;
+            }
+        }
+        loginManager.registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
+            @Override
+            public void onSuccess(LoginResult loginResult) {
+                writePost();
+            }
+
+            @Override
+            public void onCancel() {
+
+            }
+
+            @Override
+            public void onError(FacebookException error) {
+
+            }
+        });
+        loginManager.setDefaultAudience(DefaultAudience.FRIENDS);
+        loginManager.setLoginBehavior(LoginBehavior.NATIVE_WITH_FALLBACK);
+        loginManager.logInWithPublishPermissions(this, Arrays.asList("publish_actions"));
+    }
+
+    private void readPost() {
+        AccessToken token = AccessToken.getCurrentAccessToken();
+        if (token != null) {
+            if (token.getPermissions().contains("user_posts")) {
+                GraphRequest request = new GraphRequest(token, "/me/feed", null, HttpMethod.GET, new GraphRequest.Callback() {
+                    @Override
+                    public void onCompleted(GraphResponse response) {
+                        if (response.getError() == null) {
+                            Toast.makeText(MainActivity.this, "data : " + response.getRawResponse(), Toast.LENGTH_SHORT).show();
+                        } else {
+                            Toast.makeText(MainActivity.this, "error : " + response.getError().toString(), Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
+                request.executeAsync();
+                return;
+            }
+        }
+        loginManager.registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
+            @Override
+            public void onSuccess(LoginResult loginResult) {
+                readPost();
+            }
+
+            @Override
+            public void onCancel() {
+
+            }
+
+            @Override
+            public void onError(FacebookException error) {
+
+            }
+        });
+        loginManager.setDefaultAudience(DefaultAudience.FRIENDS);
+        loginManager.setLoginBehavior(LoginBehavior.NATIVE_WITH_FALLBACK);
+        loginManager.logInWithReadPermissions(this, Arrays.asList("user_posts"));
     }
 
     @Override
